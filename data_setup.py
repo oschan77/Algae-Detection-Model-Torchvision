@@ -60,18 +60,18 @@ def create_datasets(root: str, annFile: str, train_ratio: float) -> Tuple[torch.
     return dataset_train, dataset_test
 
 # Function to create train and test dataloaders from train and test datasets
-def create_dataloaders(dataset_train: torch.utils.data.Dataset, dataset_test: torch.utils.data.Dataset, batch_size: int, num_workers: int) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+def create_dataloaders(dataset_train: torch.utils.data.Dataset, dataset_test: torch.utils.data.Dataset, batch_size: int, num_workers: int, train_sampler: torch.utils.data.distributed.DistributedSampler, test_sampler: torch.utils.data.distributed.DistributedSampler) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     train_dataloader = torch.utils.data.DataLoader(
         dataset_train,
         batch_size=batch_size,
-        shuffle=True,
+        sampler=train_sampler,
         num_workers=num_workers,
         collate_fn=collate_fn,
     )
     test_dataloader = torch.utils.data.DataLoader(
         dataset_test,
         batch_size=batch_size,
-        shuffle=False,
+        sampler=test_sampler,
         num_workers=num_workers,
         collate_fn=collate_fn,
     )
