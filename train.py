@@ -1,7 +1,7 @@
 import argparse
 import torch
 from data_setup import create_datasets, create_dataloaders
-from model_builder import get_FasterRCNN_model
+from model_builder import get_faster_rcnn_model
 from custom_utils import save_model
 from engine import train_one_epoch, evaluate
 
@@ -40,7 +40,7 @@ def main():
         num_workers=args.num_workers,
     )
 
-    model = get_FasterRCNN_model(
+    model = get_faster_rcnn_model(
         num_classes=args.num_classes,
         feature_extract=args.fe,
     )
