@@ -5,59 +5,66 @@ from model_builder import get_FasterRCNN_model
 from custom_utils import save_model
 from engine import train_one_epoch, evaluate
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--root', type=str, required=True)
-parser.add_argument('--annfile', type=str, required=True)
-parser.add_argument('--target_path', type=str, default='saved_models')
-parser.add_argument('--model_name', type=str, default='faster_rcnn_v1.pth')
-parser.add_argument('--num_classes', type=int, default=5)
-parser.add_argument('--train_ratio', type=float, default=0.8)
-parser.add_argument('--batch_size', type=int, default=2)
-parser.add_argument('--num_workers', type=int, default=1)
-parser.add_argument('--print_freq', type=int, default=1)
-parser.add_argument('--lr', type=float, default=1e-3)
-parser.add_argument('--epochs', type=int, default=5)
-parser.add_argument('--fe', type=bool, default=True)
-args = parser.parse_args()
 
-DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-ROOT = args.root
-ANNFILE = args.annfile
-TARGET_PATH = args.target_path
-MODEL_NAME = args.model_name
-NUM_CLASSES = args.num_classes
-TRAIN_RATIO = args.train_ratio
-BATCH_SIZE = args.batch_size
-NUM_WORKERS = args.num_workers
-PRINT_FREQ = args.print_freq
-LEARNING_RATE = args.lr
-EPOCHS = args.epochs
-FEATURE_EXTRACT = args.fe
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root', type=str, required=True)
+    parser.add_argument('--annfile', type=str, required=True)
+    parser.add_argument('--target_path', type=str, default='saved_models')
+    parser.add_argument('--model_name', type=str, default='faster_rcnn_v1.pth')
+    parser.add_argument('--num_classes', type=int, default=5)
+    parser.add_argument('--train_ratio', type=float, default=0.8)
+    parser.add_argument('--batch_size', type=int, default=2)
+    parser.add_argument('--num_workers', type=int, default=1)
+    parser.add_argument('--print_freq', type=int, default=1)
+    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--epochs', type=int, default=5)
+    parser.add_argument('--fe', action='store_true')
+    return parser.parse_args()
 
-dataset_train, dataset_test = create_datasets(
-  root = ROOT,
-  annFile = ANNFILE,
-  train_ratio = TRAIN_RATIO,
-)
 
-train_dataloader, test_dataloader = create_dataloaders(
-  dataset_train = dataset_train,
-  dataset_test = dataset_test,
-  batch_size = BATCH_SIZE,
-  num_workers = NUM_WORKERS,
-)
+def main():
+    args = parse_args()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = get_FasterRCNN_model(num_classes=NUM_CLASSES, feature_extract=FEATURE_EXTRACT)
-model.to(DEVICE)
+    dataset_train, dataset_test = create_datasets(
+        root=args.root,
+        annFile=args.annfile,
+        train_ratio=args.train_ratio,
+    )
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    train_dataloader, test_dataloader = create_dataloaders(
+        dataset_train=dataset_train,
+        dataset_test=dataset_test,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+    )
 
-for epoch in range(EPOCHS):
-  train_one_epoch(model, optimizer, train_dataloader, DEVICE, epoch, print_freq=PRINT_FREQ)
-  evaluate(model, test_dataloader, device=DEVICE)
+    model = get_FasterRCNN_model(
+        num_classes=args.num_classes,
+        feature_extract=args.fe,
+    )
+    model.to(device)
 
-save_model(
-  model=model,
-  target_path=TARGET_PATH,
-  model_name=MODEL_NAME,
-)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+
+    for epoch in range(args.epochs):
+        train_one_epoch(
+            model=model,
+            optimizer=optimizer,
+            data_loader=train_dataloader,
+            device=device,
+            epoch=epoch,
+            print_freq=args.print_freq,
+        )
+        evaluate(model=model, data_loader=test_dataloader, device=device)
+
+    save_model(
+        model=model,
+        target_path=args.target_path,
+        model_name=args.model_name,
+    )
+
+
+if __name__ == '__main__':
+    main()
