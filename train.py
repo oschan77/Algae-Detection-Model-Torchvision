@@ -2,6 +2,7 @@ import argparse
 import torch
 import torch.nn.parallel
 import torch.distributed as dist
+import wandb
 from data_setup import create_datasets, create_dataloaders
 from model_builder import get_faster_rcnn_model
 from custom_utils import save_model
@@ -28,6 +29,16 @@ def parse_args():
 def main():
     args = parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # Initialize Weights & Biases project
+    wandb.init(project='algae-detection-faster-rcnn')
+    config = wandb.config
+    config.num_classes = args.num_classes
+    config.batch_size = args.batch_size
+    config.num_workers = args.num_workers
+    config.lr = args.lr
+    config.epochs = args.epochs
+    config.fe = args.fe
 
     # Initialize distributed training environment
     if torch.cuda.device_count() > 1:
@@ -79,11 +90,14 @@ def main():
 
     model.to(device)
 
+    # Start tracking the gradients and parameters of the model
+    wandb.watch(model)
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
 
     for epoch in range(args.epochs):
         train_sampler.set_epoch(epoch)
-        train_one_epoch(
+        _, train_loss = train_one_epoch(
             model=model,
             optimizer=optimizer,
             data_loader=train_dataloader,
@@ -91,6 +105,9 @@ def main():
             epoch=epoch,
             print_freq=args.print_freq,
         )
+
+        wandb.log({'epoch': epoch, 'train_loss': train_loss})
+
         test_sampler.set_epoch(epoch)
         evaluate(model=model, data_loader=test_dataloader, device=device)
 

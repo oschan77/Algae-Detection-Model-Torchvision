@@ -24,6 +24,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
             optimizer, start_factor=warmup_factor, total_iters=warmup_iters
         )
 
+    total_losses = 0.0
+    num_batches = 0
+
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -42,6 +45,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
             print(loss_dict_reduced)
             sys.exit(1)
 
+        total_losses += loss_value
+        num_batches += 1
+
         optimizer.zero_grad()
         if scaler is not None:
             scaler.scale(losses).backward()
@@ -57,7 +63,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
-    return metric_logger
+    avg_loss = total_losses / num_batches
+
+    return metric_logger, avg_loss
 
 
 def _get_iou_types(model):
