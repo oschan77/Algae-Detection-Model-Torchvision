@@ -1,5 +1,7 @@
 # Algae-Detection-System
 
+The code trains a Faster R-CNN object detection model using PyTorch and tracks the training progress with Weights & Biases. It includes the following steps:
+
 1. Parse command-line arguments using the argparse library.
 2. Initialize a Weights & Biases project and set configuration parameters based on the command-line arguments.
 3. If multiple GPUs are available, initialize a distributed training environment using the torch.distributed library.
