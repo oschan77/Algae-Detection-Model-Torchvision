@@ -91,6 +91,7 @@ def main():
             epoch=epoch,
             print_freq=args.print_freq,
         )
+        test_sampler.set_epoch(epoch)
         evaluate(model=model, data_loader=test_dataloader, device=device)
 
     save_model(
