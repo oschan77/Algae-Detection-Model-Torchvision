@@ -83,7 +83,7 @@ def main():
 
     for epoch in range(args.epochs):
         train_sampler.set_epoch(epoch)
-        train_one_epoch(
+        _, train_loss = train_one_epoch(
             model=model,
             optimizer=optimizer,
             data_loader=train_dataloader,
@@ -91,6 +91,9 @@ def main():
             epoch=epoch,
             print_freq=args.print_freq,
         )
+
+        print(f'train_loss: {train_loss}')
+
         test_sampler.set_epoch(epoch)
         evaluate(model=model, data_loader=test_dataloader, device=device)
 
